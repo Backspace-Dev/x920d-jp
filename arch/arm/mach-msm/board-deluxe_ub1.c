@@ -863,8 +863,8 @@ static struct resource mdm_resources[] = {
 		.flags	= IORESOURCE_IO,
 	},
 	{
-		.start	= AP2MDM_PON_RESET_N,
-		.end		= AP2MDM_PON_RESET_N,
+		.start	= AP2MDM_PON_RESET_N_XA,
+		.end		= AP2MDM_PON_RESET_N_XA,
 		.name	= "AP2MDM_PMIC_RESET_N",
 		.flags	= IORESOURCE_IO,
 	},
@@ -875,8 +875,8 @@ static struct resource mdm_resources[] = {
 		.flags	= IORESOURCE_IO,
 	},
 	{
-		.start	= AP2MDM_WAKEUP,
-		.end		= AP2MDM_WAKEUP,
+		.start	= AP2MDM_WAKEUP_XA_XB,
+		.end		= AP2MDM_WAKEUP_XA_XB,
 		.name	= "AP2MDM_WAKEUP",
 		.flags	= IORESOURCE_IO,
 	},
@@ -1044,6 +1044,7 @@ static struct htc_battery_platform_data htc_battery_pdev_data = {
 	.icharger.is_ovp = pm8921_is_charger_ovp,
 	.icharger.is_batt_temp_fault_disable_chg =
 						pm8921_is_batt_temp_fault_disable_chg,
+	// .icharger.is_vbus_unstable = pm8921_is_vbus_unstable,
 	.icharger.charger_change_notifier_register =
 						cable_detect_register_notifier,
 	.icharger.dump_all = pm8921_dump_all,
@@ -1307,7 +1308,7 @@ struct pm8921_bms_battery_data  bms_battery_data_id_2 = {
 static struct htc_battery_cell htc_battery_cells[] = {
 	[0] = {
 		.model_name = "BJ83100",
-		.capacity = 2000,
+		.capacity = 2020,
 		.id = 1,
 		.id_raw_min = 73, 
 		.id_raw_max = 204,
@@ -1319,7 +1320,7 @@ static struct htc_battery_cell htc_battery_cells[] = {
 	},
 	[1] = {
 		.model_name = "BJ83100",
-		.capacity = 2000,
+		.capacity = 2020,
 		.id = 2,
 		.id_raw_min = 205, 
 		.id_raw_max = 385,
@@ -1331,7 +1332,7 @@ static struct htc_battery_cell htc_battery_cells[] = {
 	},
 	[2] = {
 		.model_name = "UNKNOWN",
-		.capacity = 2000,
+		.capacity = 2020,
 		.id = 255,
 		.id_raw_min = INT_MIN,
 		.id_raw_max = INT_MAX,
@@ -1345,14 +1346,29 @@ static struct htc_battery_cell htc_battery_cells[] = {
 #endif 
 
 #ifdef CONFIG_FB_MSM_HDMI_MHL
-static struct pm8xxx_gpio_init switch_to_usb_pmic_gpio_table[] = {
+static struct pm8xxx_gpio_init switch_to_usb_pmic_gpio_table_xa[] = {
+        PM8XXX_GPIO_INIT(USBz_AUDIO_SW, PM_GPIO_DIR_OUT,
+                         PM_GPIO_OUT_BUF_CMOS, 1, PM_GPIO_PULL_NO,
+                         PM_GPIO_VIN_S4, PM_GPIO_STRENGTH_LOW,
+                         PM_GPIO_FUNC_NORMAL, 0, 0),
+};
+
+static struct pm8xxx_gpio_init switch_to_mhl_pmic_gpio_table_xa[] = {
         PM8XXX_GPIO_INIT(USBz_AUDIO_SW, PM_GPIO_DIR_OUT,
                          PM_GPIO_OUT_BUF_CMOS, 0, PM_GPIO_PULL_NO,
                          PM_GPIO_VIN_S4, PM_GPIO_STRENGTH_LOW,
                          PM_GPIO_FUNC_NORMAL, 0, 0),
 };
 
-static struct pm8xxx_gpio_init switch_to_mhl_pmic_gpio_table[] = {
+
+static struct pm8xxx_gpio_init switch_to_usb_pmic_gpio_table_xb[] = {
+        PM8XXX_GPIO_INIT(USBz_AUDIO_SW, PM_GPIO_DIR_OUT,
+                         PM_GPIO_OUT_BUF_CMOS, 0, PM_GPIO_PULL_NO,
+                         PM_GPIO_VIN_S4, PM_GPIO_STRENGTH_LOW,
+                         PM_GPIO_FUNC_NORMAL, 0, 0),
+};
+
+static struct pm8xxx_gpio_init switch_to_mhl_pmic_gpio_table_xb[] = {
         PM8XXX_GPIO_INIT(USBz_AUDIO_SW, PM_GPIO_DIR_OUT,
                          PM_GPIO_OUT_BUF_CMOS, 1, PM_GPIO_PULL_NO,
                          PM_GPIO_VIN_S4, PM_GPIO_STRENGTH_LOW,
@@ -1376,10 +1392,18 @@ static void deluxe_ub1_usb_dpdn_switch(int path)
 {
 	switch (path) {
 	case PATH_USB:
-		pm8xxx_gpio_config(switch_to_usb_pmic_gpio_table[0].gpio, &switch_to_usb_pmic_gpio_table[0].config);
+		if (system_rev == XA) {
+			pm8xxx_gpio_config(switch_to_usb_pmic_gpio_table_xa[0].gpio, &switch_to_usb_pmic_gpio_table_xa[0].config);
+		} else {
+			pm8xxx_gpio_config(switch_to_usb_pmic_gpio_table_xb[0].gpio, &switch_to_usb_pmic_gpio_table_xb[0].config);
+		}
 		break;
 	case PATH_MHL:
-		pm8xxx_gpio_config(switch_to_mhl_pmic_gpio_table[0].gpio, &switch_to_mhl_pmic_gpio_table[0].config);
+		if (system_rev == XA) {
+			pm8xxx_gpio_config(switch_to_mhl_pmic_gpio_table_xa[0].gpio, &switch_to_mhl_pmic_gpio_table_xa[0].config);
+		} else {
+			pm8xxx_gpio_config(switch_to_mhl_pmic_gpio_table_xb[0].gpio, &switch_to_mhl_pmic_gpio_table_xb[0].config);
+		}
 		break;
 	}
 	sii9234_change_usb_owner((path == PATH_MHL) ? 1 : 0);
@@ -1848,6 +1872,31 @@ static void deluxe_ub1_config_usb_id_gpios(bool output)
 	}
 }
 
+
+static uint32_t three_pogo_dock_detect_pin_pullup =
+	GPIO_CFG(POGO_ID_XC, 0, GPIO_CFG_INPUT, GPIO_CFG_PULL_UP, GPIO_CFG_2MA);
+static uint32_t three_pogo_dock_detect_pin_pulllow =
+	GPIO_CFG(POGO_ID_XC, 0, GPIO_CFG_INPUT, GPIO_CFG_PULL_DOWN, GPIO_CFG_2MA);
+
+
+static int deluxe_ub1_detect_three_pogo_dock(void)
+{
+	if (system_rev < XC) {
+		printk("[CABLE] systemrev < XC, pogo detect return 0\n");
+		return 0;
+	}
+
+	gpio_tlmm_config(three_pogo_dock_detect_pin_pullup, GPIO_CFG_ENABLE);
+	msleep(150);
+	if (!gpio_get_value(POGO_ID_XC))
+		return 1;	
+	gpio_tlmm_config(three_pogo_dock_detect_pin_pulllow, GPIO_CFG_ENABLE);
+	msleep(150);
+	if (gpio_get_value(POGO_ID_XC))
+		return 2;	
+	return 0;		
+}
+
 static struct cable_detect_platform_data cable_detect_pdata = {
        .detect_type            = CABLE_TYPE_PMIC_ADC,
        .usb_id_pin_gpio        = USB1_HS_ID_GPIO,
@@ -1857,6 +1906,7 @@ static struct cable_detect_platform_data cable_detect_pdata = {
        .mhl_1v2_power = mhl_sii9234_1v2_power,
        .usb_dpdn_switch        = deluxe_ub1_usb_dpdn_switch,
 #endif
+	.detect_three_pogo_dock	= deluxe_ub1_detect_three_pogo_dock,
 };
 
 static struct platform_device cable_detect_device = {
@@ -1905,8 +1955,8 @@ void deluxe_ub1_add_usb_devices(void)
 
 	
 	if (board_mfg_mode() == 0) {
-		android_usb_pdata.nluns = 1;
-		android_usb_pdata.cdrom_lun = 0x1;
+		android_usb_pdata.nluns = 2;
+		android_usb_pdata.cdrom_lun = 0x2;
 	}
 	android_usb_pdata.serial_number = board_serialno();
 
@@ -2587,8 +2637,6 @@ static struct synaptics_i2c_rmi_platform_data syn_ts_3k_data[] = {
 		.abs_x_max = 1620,
 		.abs_y_min = 0,
 		.abs_y_max = 2680,
-		.display_width = 1080,
-		.display_height = 1920,
 		.gpio_irq = TP_ATTz,
 		.default_config = 2,
 		.large_obj_check = 1,
@@ -2635,8 +2683,6 @@ static struct synaptics_i2c_rmi_platform_data syn_ts_3k_data[] = {
 		.abs_x_max = 1620,
 		.abs_y_min = 0,
 		.abs_y_max = 2680,
-		.display_width = 1080,
-		.display_height = 1920,
 		.gpio_irq = TP_ATTz,
 		.default_config = 2,
 		.config = {0x30, 0x32, 0x30, 0x30, 0x84, 0x0F, 0x03, 0x1E,
@@ -2795,6 +2841,106 @@ static struct i2c_board_info i2c_CM36282_devices[] = {
 		I2C_BOARD_INFO(CM3629_I2C_NAME, 0xC0 >> 1),
 		.platform_data = &cm36282_pdata,
 		.irq =  PM8921_GPIO_IRQ(PM8921_IRQ_BASE, PROXIMITY_INT),
+	},
+};
+
+static int ioext_set_reset_pin(int level)
+{
+	unsigned ret;
+
+	struct pm8xxx_mpp_config_data ioext_mpp = {
+		.type	= PM8XXX_MPP_TYPE_D_OUTPUT,
+		.level	= PM8921_MPP_DIG_LEVEL_S4,
+	};
+
+	if (level) {
+		ioext_mpp.control = PM8XXX_MPP_DOUT_CTRL_HIGH;
+		ret = pm8xxx_mpp_config(PM8921_MPP_PM_TO_SYS(12),
+							&ioext_mpp);
+		if (ret < 0)
+			pr_err("%s:MPP2 configuration failed\n", __func__);
+	} else {
+		ioext_mpp.control = PM8XXX_MPP_DOUT_CTRL_LOW;
+		ret = pm8xxx_mpp_config(PM8921_MPP_PM_TO_SYS(12),
+							&ioext_mpp);
+		if (ret < 0)
+			pr_err("%s:MPP2 un config failed\n", __func__);
+	}
+	return ret;
+}
+
+static void ioext_reset_chip(void)
+{
+	uint8_t rdara[4];
+	uint8_t wdata[4]={0};
+
+	printk(KERN_INFO "[IOEXT] %s START\n", __func__);
+	
+	ioext_set_reset_pin(1);
+	msleep(10);
+	ioext_set_reset_pin(0);
+	msleep(10);
+	ioext_set_reset_pin(1);
+
+	msleep(100);
+
+	
+	ioext_i2c_read(0x00, rdara, 1);
+	printk(KERN_INFO "[IOEXT] %s [R] ChipID(0x00) = 0x%x\n", __func__, rdara[0]);
+
+
+	
+	wdata[0] = 0x00;
+	wdata[1] = 0x00;
+	ioext_i2c_write(0x38, wdata, 2);
+	printk(KERN_INFO "[IOEXT] %s [W] PIN_CONFIG (0x38~0x39) Reg\n", __func__);
+
+	
+	wdata[0] = 0xff;
+	wdata[1] = 0x03;
+	wdata[2] = 0xff;
+	wdata[3] = 0x03;
+	ioext_i2c_write(0x17, wdata, 4);
+	printk(KERN_INFO "[IOEXT] %s [W] RPULL_CONFIG_A (0x17~0x20) Reg\n", __func__);
+
+	
+	wdata[0] = 0x1f;
+	wdata[1] = 0x1f;
+	ioext_i2c_write(0x27, wdata, 2);
+	printk(KERN_INFO "[IOEXT] %s [W] GPIO_DIRECTION (0x27~0x28) Reg\n", __func__);
+
+	
+	wdata[0] = 0x00;
+	wdata[1] = 0x00;
+	ioext_i2c_write(0x25, wdata, 2);
+	printk(KERN_INFO "[IOEXT] %s [W] GPO_OUT_MODE (0x25~0x26) Reg\n", __func__);
+
+	
+	wdata[0] = 0x00;
+	wdata[1] = 0x00;
+	ioext_i2c_write(0x25, wdata, 2);
+	printk(KERN_INFO "[IOEXT] %s [W] GPO_DATA_OUT (0x23~0x24) Reg\n", __func__);
+
+
+	printk(KERN_INFO "[IOEXT] %s END\n", __func__);
+
+	return;
+}
+
+
+static struct platform_device ioext_devices[] = {
+};
+
+static struct ioext_i2c_platform_data ioext_data = {
+	.num_devices = ARRAY_SIZE(ioext_devices),
+	.ioext_devices = ioext_devices,
+	.reset_chip = ioext_reset_chip,
+};
+
+static struct i2c_board_info i2c_ioext_devices[] = {
+	{
+		I2C_BOARD_INFO(IOEXTENDER_I2C_NAME, 0x68 >> 1),
+		.platform_data = &ioext_data,
 	},
 };
 
@@ -3875,6 +4021,21 @@ static int haptic_set_vdd(int enable)
 }
 
 static struct pm8xxx_vibrator_pwm_platform_data pm8xxx_vib_pwm_pdata = {
+	.initial_vibrate_ms = 0,
+	.max_timeout_ms = 15000,
+	.duty_us = 37,
+	.PERIOD_US = 38,
+    .bank = PM8XXX_ID_GPIO26,
+	.ena_gpio = PM8921_GPIO_PM_TO_SYS(HAPTIC_EN),
+	.set_vdd_power = haptic_set_vdd,
+};
+static struct platform_device vibrator_pwm_device = {
+	.name = PM8XXX_VIBRATOR_PWM_DEV_NAME,
+	.dev = {
+	.platform_data	= &pm8xxx_vib_pwm_pdata,
+	},
+};
+static struct pm8xxx_vibrator_pwm_platform_data pm8xxx_vib_pwm_pdata_XC = {
     .initial_vibrate_ms = 0,
     .max_timeout_ms = 15000,
 	.duty_us = 35,
@@ -3883,10 +4044,10 @@ static struct pm8xxx_vibrator_pwm_platform_data pm8xxx_vib_pwm_pdata = {
     .ena_gpio = PM8921_GPIO_PM_TO_SYS(HAPTIC_EN),
     .set_vdd_power = haptic_set_vdd,
 };
-static struct platform_device vibrator_pwm_device = {
+static struct platform_device vibrator_pwm_device_XC = {
     .name = PM8XXX_VIBRATOR_PWM_DEV_NAME,
     .dev = {
-		.platform_data  = &pm8xxx_vib_pwm_pdata,
+		.platform_data  = &pm8xxx_vib_pwm_pdata_XC,
 	},
 };
 
@@ -4172,7 +4333,7 @@ static void __init deluxe_ub1_i2c_init(void)
 					&deluxe_ub1_i2c_qup_gsbi1_pdata;
 	gsbi_mem = ioremap_nocache(MSM_GSBI1_PHYS, 4);
 	writel_relaxed(GSBI_DUAL_MODE_CODE, gsbi_mem);
-	
+	/* Ensure protocol code is written before proceeding */
 	wmb();
 	iounmap(gsbi_mem);
 	deluxe_ub1_i2c_qup_gsbi1_pdata.use_gsbi_shared_mode = 1;
@@ -4376,6 +4537,12 @@ static struct i2c_registry deluxe_ub1_i2c_devices[] __initdata = {
 	{
 		I2C_SURF | I2C_FFA,
 		MSM8064_GSBI2_QUP_I2C_BUS_ID,
+		i2c_ioext_devices,
+		ARRAY_SIZE(i2c_ioext_devices),
+	},
+	{
+		I2C_SURF | I2C_FFA,
+		MSM8064_GSBI2_QUP_I2C_BUS_ID,
 		pwm_i2c_devices,
 		ARRAY_SIZE(pwm_i2c_devices),
 	},
@@ -4436,6 +4603,22 @@ static void __init register_i2c_devices(void)
 	u8 mach_mask = 0;
 	int i;
 
+#ifdef CONFIG_MSM_CAMERA
+	struct i2c_registry deluxe_ub1_camera_i2c_devices = {
+		I2C_SURF | I2C_FFA | I2C_LIQUID | I2C_RUMI,
+		APQ_8064_GSBI4_QUP_I2C_BUS_ID,
+		deluxe_ub1_camera_board_info.board_info,
+		deluxe_ub1_camera_board_info.num_i2c_board_info,
+	};
+
+	struct i2c_registry deluxe_ub1_camera_i2c_devices_xb = {
+		I2C_SURF | I2C_FFA | I2C_LIQUID | I2C_RUMI,
+		APQ_8064_GSBI4_QUP_I2C_BUS_ID,
+		deluxe_ub1_camera_board_info_xb.board_info,
+		deluxe_ub1_camera_board_info_xb.num_i2c_board_info,
+	};
+
+#endif
 	
 	mach_mask = I2C_SURF;
 
@@ -4452,7 +4635,19 @@ static void __init register_i2c_devices(void)
 						deluxe_ub1_i2c_devices[i].info,
 						deluxe_ub1_i2c_devices[i].len);
 	}
-
+#ifdef CONFIG_MSM_CAMERA
+	if ( system_rev == XA ) {
+		if (deluxe_ub1_camera_i2c_devices.machs & mach_mask)
+			i2c_register_board_info(deluxe_ub1_camera_i2c_devices.bus,
+				deluxe_ub1_camera_i2c_devices.info,
+				deluxe_ub1_camera_i2c_devices.len);
+	} else if ( system_rev == XB || system_rev == XC) {
+		if (deluxe_ub1_camera_i2c_devices_xb.machs & mach_mask)
+			i2c_register_board_info(deluxe_ub1_camera_i2c_devices_xb.bus,
+				deluxe_ub1_camera_i2c_devices_xb.info,
+				deluxe_ub1_camera_i2c_devices_xb.len);
+	}
+#endif
 	if (gy_type == 2) {
 		i2c_register_board_info(MSM8064_GSBI2_QUP_I2C_BUS_ID,
 				motion_sensor_gsbi_2_info,
@@ -4760,9 +4955,15 @@ static void __init deluxe_ub1_common_init(void)
 	if (msm_xo_init())
 		pr_err("Failed to initialize XO votes\n");
 	
-	clk_ignor_list_add("msm_sdcc.4", "core_clk", &deluxe_ub1_clock_init_data);
+	if (system_rev == XA)
+		clk_ignor_list_add("msm_sdcc.3", "core_clk", &apq8064_clock_init_data);
+	else if (system_rev >= XB)
+		clk_ignor_list_add("msm_sdcc.4", "core_clk", &deluxe_ub1_clock_init_data);
 	
-	msm_clock_init(&deluxe_ub1_clock_init_data);
+	if ( system_rev == XA )
+		msm_clock_init(&apq8064_clock_init_data);
+	else if ( system_rev >= XB )
+		msm_clock_init(&deluxe_ub1_clock_init_data);
 	deluxe_ub1_init_gpiomux();
 #ifdef CONFIG_RESET_BY_CABLE_IN
 	pr_info("[CABLE] Enable Ac Reset Function.(%d) \n", system_rev);
@@ -4791,10 +4992,14 @@ static void __init deluxe_ub1_common_init(void)
 
 	
 #ifdef CONFIG_SMB349_CHARGER
-	smb349_data.chip_rev = SMB_340;
-	smb349_data.aicl_result_threshold = AICL_RESULT_1000MA;
-	smb349_data.dc_input_max = DC_INPUT_1000MA;
-	smb349_data.aicl_on = AICL_DISABLE;
+	if(system_rev < XD)
+		smb349_data.chip_rev = SMB_349;
+	else
+		smb349_data.chip_rev = SMB_340;
+
+	smb349_data.aicl_result_threshold = AICL_RESULT_1600MA;
+	smb349_data.dc_input_max = DC_INPUT_1700MA;
+	smb349_data.aicl_on = AICL_ENABLE;
 #endif
 
 	register_i2c_devices();
@@ -4813,7 +5018,11 @@ static void __init deluxe_ub1_common_init(void)
 #endif 
 
 	platform_add_devices(common_devices, ARRAY_SIZE(common_devices));
-	platform_device_register(&vibrator_pwm_device);
+
+	if (system_rev < XC )
+		platform_device_register(&vibrator_pwm_device);
+	else
+              platform_device_register(&vibrator_pwm_device_XC);
 
 	if(board_mfg_mode() == 9) {
 		if (board_fullramdump_flag())
@@ -4835,6 +5044,14 @@ static void __init deluxe_ub1_common_init(void)
 
 	pr_info("%s: Add MDM2 device\n", __func__);
 	mdm_8064_device.dev.platform_data = &mdm_platform_data;
+	if (system_rev >= XB) {
+		mdm_8064_device.resource[4].start = AP2MDM_PON_RESET_N_XB;
+		mdm_8064_device.resource[4].end = AP2MDM_PON_RESET_N_XB;
+	}
+	if (system_rev >= XC) {
+		mdm_8064_device.resource[6].start = AP2MDM_WAKEUP_XC;
+		mdm_8064_device.resource[6].end = AP2MDM_WAKEUP_XC;
+	}
 	platform_device_register(&mdm_8064_device);
 
 	platform_device_register(&apq8064_slim_ctrl);
@@ -4980,5 +5197,4 @@ MACHINE_START(DELUXE_UB1, "UNKNOWN")
 	.init_very_early = deluxe_ub1_early_reserve,
 	.restart = msm_restart,
 MACHINE_END
-
 

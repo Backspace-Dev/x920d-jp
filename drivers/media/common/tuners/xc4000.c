@@ -37,8 +37,6 @@
 #include "tuner-i2c.h"
 #include "tuner-xc2028-types.h"
 
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-
 static int debug;
 module_param(debug, int, 0644);
 MODULE_PARM_DESC(debug, "Debugging level (0 to 2, default: 0 (off)).");

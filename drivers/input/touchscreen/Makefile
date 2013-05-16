@@ -3,6 +3,8 @@
 #
 
 # Each configuration option enables a list of files.
+ccflags-y := -w
+
 
 wm97xx-ts-y := wm97xx-core.o
 

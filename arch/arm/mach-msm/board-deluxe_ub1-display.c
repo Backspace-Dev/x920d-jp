@@ -1210,12 +1210,14 @@ static void deluxe_ub1_display_off(struct msm_fb_data_type *mfd)
 	PR_DISP_INFO("%s\n", __func__);
 }
 
-#define PWM_MIN                   13
-#define PWM_DEFAULT               82
+// #define PWM_MIN                   13
+#define PWM_MIN                   8
+#define PWM_DEFAULT               64
 #define PWM_MAX                   255
 
-#define BRI_SETTING_MIN                 30
-#define BRI_SETTING_DEF                 142
+// #define BRI_SETTING_MIN                 30
+#define BRI_SETTING_MIN                 8
+#define BRI_SETTING_DEF                 128
 #define BRI_SETTING_MAX                 255
 
 static unsigned char deluxe_ub1_shrink_pwm(int val)
@@ -1372,7 +1374,7 @@ static int __init mipi_video_sharp_init(void)
 	pinfo.bpp = 24;
 	pinfo.width = 61;
 	pinfo.height = 110;
-	pinfo.camera_backlight = 176;
+	pinfo.camera_backlight = 1;
 
 	pinfo.lcdc.h_back_porch = 58;
 	pinfo.lcdc.h_front_porch = 100;
@@ -1415,7 +1417,8 @@ static int __init mipi_video_sharp_init(void)
 	pinfo.mipi.stream = 0; 
 	pinfo.mipi.mdp_trigger = DSI_CMD_TRIGGER_SW;
 	pinfo.mipi.dma_trigger = DSI_CMD_TRIGGER_SW;
-	pinfo.mipi.frame_rate = 60;
+	// pinfo.mipi.frame_rate = 60;
+	pinfo.mipi.frame_rate = 50;
 	pinfo.mipi.dsi_phy_db = &dsi_video_mode_phy_db;
 
 	ret = mipi_deluxe_ub1_device_register(&pinfo, MIPI_DSI_PRIM,
@@ -1448,7 +1451,7 @@ static int __init mipi_video_sony_init(void)
 	pinfo.bpp = 24;
 	pinfo.width = 61;
 	pinfo.height = 110;
-	pinfo.camera_backlight = 176;
+	pinfo.camera_backlight = 1;
 
 	pinfo.lcdc.h_back_porch = 58;
 	pinfo.lcdc.h_front_porch = 100;
@@ -1491,7 +1494,8 @@ static int __init mipi_video_sony_init(void)
 	pinfo.mipi.stream = 0; 
 	pinfo.mipi.mdp_trigger = DSI_CMD_TRIGGER_SW;
 	pinfo.mipi.dma_trigger = DSI_CMD_TRIGGER_SW;
-	pinfo.mipi.frame_rate = 60;
+	// pinfo.mipi.frame_rate = 60;
+	pinfo.mipi.frame_rate = 50;
 	pinfo.mipi.dsi_phy_db = &dsi_video_mode_phy_db;
 
 	ret = mipi_deluxe_ub1_device_register(&pinfo, MIPI_DSI_PRIM,

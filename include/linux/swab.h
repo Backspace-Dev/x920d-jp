@@ -5,8 +5,6 @@
 #include <linux/compiler.h>
 #include <asm/swab.h>
 
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-
 #define ___constant_swab16(x) ((__u16)(				\
 	(((__u16)(x) & (__u16)0x00ffU) << 8) |			\
 	(((__u16)(x) & (__u16)0xff00U) >> 8)))
