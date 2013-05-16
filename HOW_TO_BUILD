@@ -1,0 +1,46 @@
+* PREBUILT
+
+~$ git clone https://android.googlesource.com/platform/prebuilt
+
+~$ export CCOMPILER=~/prebuilt/linux-x86/toolchain/arm-eabi-4.4.3/bin/arm-eabi-
+
+
+* BUILD
+
+~/src/place$ make ARCH=arm CROSS_COMPILE=$CCOMPILER deluxe_ub1_defconfig
+~/src/place$ make ARCH=arm CROSS_COMPILE=$CCOMPILER -j2
+
+
+* TEST
+
+~/src/place$ fastboot boot arch/arm/boot/zImage
+
+
+* 
+
+
+adb reboot-bootloader
+fastboot flash zimage arch/arm/boot/zImage
+fastboot reboot
+
+
+adb remount
+adb push ./drivers/input/evbug.ko system/lib/modules/
+adb push ./drivers/crypto/msm/qcedev.ko system/lib/modules/
+adb push ./drivers/crypto/msm/qcrypto.ko system/lib/modules/
+adb push ./drivers/crypto/msm/qce40.ko system/lib/modules/
+adb push ./drivers/misc/eeprom/eeprom_93cx6.ko system/lib/modules/
+adb push ./drivers/spi/spidev.ko system/lib/modules/
+adb push ./drivers/scsi/scsi_wait_scan.ko system/lib/modules/
+adb push ./drivers/video/backlight/lcd.ko system/lib/modules/
+adb push ./drivers/bluetooth/bluetooth-power.ko system/lib/modules/
+adb push ./drivers/net/ethernet/micrel/ks8851.ko system/lib/modules/
+adb push ./drivers/net/wireless/bcmdhd_4334/bcmdhd.ko system/lib/modules/
+adb push ./drivers/media/video/gspca/gspca_main.ko system/lib/modules/
+adb push ./crypto/ansi_cprng.ko system/lib/modules/
+adb push ./arch/arm/mach-msm/msm-buspm-dev.ko system/lib/modules/
+adb push ./arch/arm/mach-msm/reset_modem.ko system/lib/modules/
+adb push ./block/test-iosched.ko system/lib/modules/
+adb shell chmod 0644 system/lib/modules/*
+adb reboot
+
